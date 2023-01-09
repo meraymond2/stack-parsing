@@ -1,27 +1,24 @@
 import { parse } from "./json"
-import { Token } from "./json/tokens"
 
-const _jstr = `{ "a": 1, "b": { "c": 2, d: "3" }}`
-const tokens: Token[] = [
-  { _tag: "LBrace" },
-  { _tag: "StrLiteral", literal: "a" },
-  { _tag: "Colon" },
-  { _tag: "NumLiteral", literal: "1" },
-  { _tag: "Comma" },
-  { _tag: "StrLiteral", literal: "b" },
-  { _tag: "Colon" },
-  { _tag: "LBrace" },
-  { _tag: "StrLiteral", literal: "c" },
-  { _tag: "Colon" },
-  { _tag: "NumLiteral", literal: "2" },
-  { _tag: "Comma" },
-  { _tag: "StrLiteral", literal: "d" },
-  { _tag: "Colon" },
-  { _tag: "NumLiteral", literal: "3" },
-  { _tag: "RBrace" },
-  { _tag: "RBrace" },
-]
-
-const ast = parse(tokens)
+const jsStr = `
+{
+  "name": "stack-parsing",
+  "version": "1.0.0",
+  "main": "out/index.js",
+  "scripts": {
+    "build": "npx esbuild src/index.ts --outdir=out --platform=node --bundle",
+    "lint": "npx prettier -w src/*.ts src/**/*.ts",
+    "start": "npm run build && node out/index.js"
+  },
+  "devDependencies": {
+    "@types/lodash.isequal": "^4.5.5",
+    "@types/node": "^14.17.34",
+    "esbuild": "^0.11.23",
+    "prettier": "^2.4.1",
+    "typescript": "^4.5.2"
+  }
+}
+`
+const ast = parse(jsStr)
 
 console.log(JSON.stringify(ast, null, 2))

@@ -1,12 +1,11 @@
 import { JsonNum, JsonObj, JsonVal } from "./ast"
 import { Token } from "./tokens"
 
-/*
-Val = true | false | null | string | number | array | object
-Obj = { (string: Val,)* string: Val }
-*/
+export const parse = (jsonStr: string): JsonVal => {
+  throw Error("todo")
+}
 
-export const parse = (ts: Token[]): JsonVal => {
+const parseTokens = (ts: Token[]): JsonVal => {
   const stack: State[] = [Start]
   const output: JsonVal[] = []
   let tail = ts
@@ -84,10 +83,7 @@ type AwaitingObjVal = {
   attributes: Array<[string, JsonVal]>
   key: string
 }
-const AwaitingObjVal = (
-  attributes: Array<[string, JsonVal]>,
-  key: string
-): AwaitingObjVal => ({
+const AwaitingObjVal = (attributes: Array<[string, JsonVal]>, key: string): AwaitingObjVal => ({
   _tag: "AwaitingObjVal",
   attributes,
   key,
