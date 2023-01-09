@@ -1,22 +1,23 @@
-import { JsonNum, JsonObj, JsonVal } from "./ast"
-import { Token } from "./tokens"
+import { JsonNum, JsonObj, JsonStr, JsonVal } from "./ast"
+import { advance, consume, initIter, TokenIter } from "./tokens"
 
-export const parse = (jsonStr: string): JsonVal => {
-  throw Error("todo")
-}
+export const parse = (jsonStr: string): JsonVal => parseTokens(initIter(jsonStr))
 
-const parseTokens = (ts: Token[]): JsonVal => {
+const parseTokens = (ts: TokenIter): JsonVal => {
   const stack: State[] = [Start]
   const output: JsonVal[] = []
-  let tail = ts
-  while (tail.length > 0) {
+  while (ts.next) {
     const state = stack.pop() as State
     switch (state._tag) {
       case "Start": {
-        const t = tail.shift() as Token
+        const t = ts.next
+        ts = advance(ts)
         switch (t._tag) {
           case "NumLiteral":
             output.push(JsonNum(t.literal))
+            break
+          case "StrLiteral":
+            output.push(JsonStr(t.literal))
             break
           case "LBrace":
             stack.push(ParsingObj([]))
@@ -28,10 +29,11 @@ const parseTokens = (ts: Token[]): JsonVal => {
       }
 
       case "ParsingObj": {
-        const t = tail.shift() as Token
+        const t = ts.next
+        ts = advance(ts)
         switch (t._tag) {
           case "StrLiteral":
-            const _colon = consume(ts, "Colon")
+            ts = consume(ts, "Colon")
             stack.push(AwaitingObjVal(state.attributes, t.literal))
             stack.push(Start)
             break
@@ -46,7 +48,10 @@ const parseTokens = (ts: Token[]): JsonVal => {
 
       case "AwaitingObjVal": {
         const val = output.pop() as JsonVal
-        if (tail[0]._tag === "Comma") ts.shift()
+        // TODO: make sure comma exists where it should
+        if (ts.next._tag === "Comma") {
+          ts = advance(ts)
+        }
         stack.push(ParsingObj(state.attributes.concat([[state.key, val]])))
         break
       }
@@ -56,12 +61,6 @@ const parseTokens = (ts: Token[]): JsonVal => {
     }
   }
   return output[0]
-}
-
-const consume = (ts: Token[], tag: string): Token => {
-  const t = ts.shift()
-  if (t?._tag === tag) return t
-  else throw Error(`Expected ${tag}, received ${t?._tag}.`)
 }
 
 type State = Start | ParsingObj | AwaitingObjVal

@@ -1,4 +1,4 @@
-type TokenIter = {
+export type TokenIter = {
   str: string
   next: Token | null
   pos: number
@@ -20,6 +20,11 @@ export const advance = (iter: TokenIter): TokenIter => {
     pos,
     next: token,
   }
+}
+
+export const consume = (iter: TokenIter, tag: TokenTag): TokenIter => {
+  if (iter.next?._tag === tag) return advance(iter)
+  throw Error(`Expected ${tag}, received: ${iter.next?._tag}`)
 }
 
 const lexToken = (input: string, pos: number): [Token | null, number] => {
@@ -73,6 +78,19 @@ const ws = (char: string): boolean => {
     codePoint === 0x09 // tab
   )
 }
+
+type TokenTag =
+  | "LBrace"
+  | "RBrace"
+  | "LSquare"
+  | "RSquare"
+  | "Comma"
+  | "Colon"
+  | "TrueLiteral"
+  | "FalseLiteral"
+  | "NullLiteral"
+  | "StrLiteral"
+  | "NumLiteral"
 
 export type Token =
   | LBrace
