@@ -1,14 +1,14 @@
 import { JsonArr, JsonFalse, JsonNull, JsonNum, JsonObj, JsonStr, JsonTrue, JsonVal } from "./ast"
-import { AwaitingArrVal, AwaitingObjVal, ParsingArr, ParsingObj, Start, State } from "./states"
+import { ParseArrVal, ParseObjVal, ParsingArr, ParsingObj, ParseVal, State } from "./states"
 import { advance, consume, TokenIter } from "./tokens"
 
 export const parseTokens = (ts: TokenIter): JsonVal => {
-  const stack: State[] = [Start]
+  const stack: State[] = [ParseVal]
   const output: JsonVal[] = []
   while (ts.next) {
     const state = stack.pop() as State
     switch (state._tag) {
-      case "Start": {
+      case "ParseVal": {
         const t = ts.next
         ts = advance(ts)
         switch (t._tag) {
@@ -45,19 +45,19 @@ export const parseTokens = (ts: TokenIter): JsonVal => {
         switch (t._tag) {
           case "StrLiteral":
             ts = consume(ts, "Colon")
-            stack.push(AwaitingObjVal(state.attributes, t.literal))
-            stack.push(Start)
+            stack.push(ParseObjVal(state.attributes, t.literal))
+            stack.push(ParseVal)
             break
           case "RBrace":
             output.push(JsonObj(state.attributes))
             break
           default:
-            throw Error(`Expected string, received: ${t._tag}`)
+            throw Error(`Expected key str or closing brace, received: ${t._tag}`)
         }
         break
       }
 
-      case "AwaitingObjVal": {
+      case "ParseObjVal": {
         const val = output.pop() as JsonVal
         // TODO: make sure comma exists where it should
         if (ts.next._tag === "Comma") {
@@ -73,13 +73,13 @@ export const parseTokens = (ts: TokenIter): JsonVal => {
           ts = advance(ts)
           output.push(JsonArr(state.items))
         } else {
-          stack.push(AwaitingArrVal(state.items))
-          stack.push(Start)
+          stack.push(ParseArrVal(state.items))
+          stack.push(ParseVal)
         }
         break
       }
 
-      case "AwaitingArrVal": {
+      case "ParseArrVal": {
         const val = output.pop() as JsonVal
         // TODO: make sure comma exists where it should
         if (ts.next._tag === "Comma") {

@@ -1,7 +1,8 @@
-import { parse } from "./json"
 import { readFileSync } from "fs"
+import { parse, stringify } from "./json"
 
-const jsStr = readFileSync(process.argv[2]).toString()
+const filePath = "package.json"
+const jsStr = readFileSync(filePath).toString()
 
 const ast = parse(jsStr)
-console.log(JSON.stringify(ast, null, 2))
+console.log(stringify(ast))
