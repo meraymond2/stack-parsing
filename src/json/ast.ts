@@ -50,3 +50,22 @@ export type JsonNull = {
   _tag: "JsonNull"
 }
 export const JsonNull: JsonNull = { _tag: "JsonNull" }
+
+export const stringify = (val: JsonVal): string => {
+  switch (val._tag) {
+    case "JsonArr":
+      return `[${val.items.map(stringify).join(", ")}]`
+    case "JsonObj":
+      return `{${val.attributes.map(([k, v]) => `${k}: ${stringify(v)}`)}}`
+    case "JsonNum":
+      return val.literal
+    case "JsonStr":
+      return val.literal
+    case "JsonTrue":
+      return "true"
+    case "JsonFalse":
+      return "false"
+    case "JsonNull":
+      return "null"
+  }
+}
