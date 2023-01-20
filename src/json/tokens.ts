@@ -1,30 +1,35 @@
-export type TokenIter = {
-  str: string
-  next: Token | null
-  pos: number
-}
+export class TokenIter {
+  private str: string
+  private pos: number
+  private current: Token | null
 
-export const initIter = (jsonStr: string): TokenIter => {
-  const [token, pos] = lexToken(jsonStr, 0)
-  return {
-    str: jsonStr,
-    pos,
-    next: token,
+  constructor(str: string) {
+    this.str = str
+    const [token, pos] = lexToken(str, 0)
+    this.pos = pos
+    this.current = token
   }
-}
 
-export const advance = (iter: TokenIter): TokenIter => {
-  const [token, pos] = lexToken(iter.str, iter.pos)
-  return {
-    str: iter.str,
-    pos,
-    next: token,
+  next = (): Token | null => {
+    const token = this.current
+    this.advance()
+    return token
   }
-}
 
-export const consume = (iter: TokenIter, tag: TokenTag): TokenIter => {
-  if (iter.next?._tag === tag) return advance(iter)
-  throw Error(`Expected ${tag}, received: ${iter.next?._tag}`)
+  peek = (): Token | null => this.current
+
+  hasNext = (): boolean => Boolean(this.current)
+
+  match = (tag: TokenTag) => {
+    if (this.current?._tag === tag) return this.advance()
+    throw Error(`Expected ${tag}, received: ${this.current?._tag}`)
+  }
+
+  advance = () => {
+    const [token, pos] = lexToken(this.str, this.pos)
+    this.pos = pos
+    this.current = token
+  }
 }
 
 const lexToken = (input: string, pos: number): [Token | null, number] => {

@@ -1,16 +1,15 @@
 import { JsonArr, JsonFalse, JsonNull, JsonNum, JsonObj, JsonStr, JsonTrue, JsonVal } from "./ast"
 import { ParseArrVal, ParseObjVal, ParsingArr, ParsingObj, ParseVal, State } from "./states"
-import { advance, consume, TokenIter } from "./tokens"
+import { Token, TokenIter } from "./tokens"
 
 export const parseTokens = (ts: TokenIter): JsonVal => {
   const stack: State[] = [ParseVal]
   const output: JsonVal[] = []
-  while (ts.next) {
+  while (ts.hasNext()) {
     const state = stack.pop() as State
     switch (state._tag) {
       case "ParseVal": {
-        const t = ts.next
-        ts = advance(ts)
+        const t = ts.next() as Token
         switch (t._tag) {
           case "NumLiteral":
             output.push(JsonNum(t.literal))
@@ -40,11 +39,10 @@ export const parseTokens = (ts: TokenIter): JsonVal => {
       }
 
       case "ParsingObj": {
-        const t = ts.next
-        ts = advance(ts) // consume key or closing brace (confusing, should move below)
+        const t = ts.next() as Token
         switch (t._tag) {
           case "StrLiteral":
-            ts = consume(ts, "Colon")
+            ts.match("Colon")
             stack.push(ParseObjVal(state.attributes, t.literal))
             stack.push(ParseVal)
             break
@@ -59,18 +57,14 @@ export const parseTokens = (ts: TokenIter): JsonVal => {
 
       case "ParseObjVal": {
         const val = output.pop() as JsonVal
-        // TODO: make sure comma exists where it should
-        if (ts.next._tag === "Comma") {
-          ts = advance(ts)
-        }
         stack.push(ParsingObj(state.attributes.concat([[state.key, val]])))
+        if (ts.peek()?._tag !== "RBrace") ts.match("Comma")
         break
       }
 
       case "ParsingArr": {
-        const t = ts.next
-        if (t._tag === "RSquare") {
-          ts = advance(ts)
+        if (ts.peek()?._tag === "RSquare") {
+          ts.match("RSquare")
           output.push(JsonArr(state.items))
         } else {
           stack.push(ParseArrVal(state.items))
@@ -81,11 +75,8 @@ export const parseTokens = (ts: TokenIter): JsonVal => {
 
       case "ParseArrVal": {
         const val = output.pop() as JsonVal
-        // TODO: make sure comma exists where it should
-        if (ts.next._tag === "Comma") {
-          ts = advance(ts)
-        }
         stack.push(ParsingArr(state.items.concat(val)))
+        if (ts.peek()?._tag !== "RSquare") ts.match("Comma")
         break
       }
 

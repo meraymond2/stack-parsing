@@ -1,7 +1,7 @@
 import { JsonVal, stringify } from "./ast"
 import { parseTokens } from "./parser"
-import { initIter } from "./tokens"
+import { TokenIter } from "./tokens"
 
-export const parse = (jsonStr: string): JsonVal => parseTokens(initIter(jsonStr))
+export const parse = (jsonStr: string): JsonVal => parseTokens(new TokenIter(jsonStr))
 
 export { stringify }
