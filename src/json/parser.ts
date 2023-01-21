@@ -1,15 +1,16 @@
 import { JsonArr, JsonFalse, JsonNull, JsonNum, JsonObj, JsonStr, JsonTrue, JsonVal } from "./ast"
 import { ParseArrVal, ParseObjVal, ParsingArr, ParsingObj, ParseVal, State } from "./states"
-import { Token, TokenIter } from "./tokens"
+import { TokenIter } from "./tokens"
 
 export const parseTokens = (ts: TokenIter): JsonVal => {
   const stack: State[] = [ParseVal]
   const output: JsonVal[] = []
-  while (ts.hasNext()) {
+  while (stack.length) {
     const state = stack.pop() as State
     switch (state._tag) {
       case "ParseVal": {
-        const t = ts.next() as Token
+        const t = ts.next()
+        if (!t) throw Error("Unexpected end of file")
         switch (t._tag) {
           case "NumLiteral":
             output.push(JsonNum(t.literal))
@@ -39,7 +40,8 @@ export const parseTokens = (ts: TokenIter): JsonVal => {
       }
 
       case "ParsingObj": {
-        const t = ts.next() as Token
+        const t = ts.next()
+        if (!t) throw Error("Unexpected end of file")
         switch (t._tag) {
           case "StrLiteral":
             ts.match("Colon")
