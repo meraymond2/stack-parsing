@@ -5,8 +5,8 @@ An experiment in writing a top-down parser that uses an explicit stack rather th
 So far I've written a basic JSON parser, but would like to try some others too.
 
 ## Status
-It's working, but it's horrendously slow at the moment, at least on the large file I'm testing on. It's averaging 104ms per loop! and takes over 7 minutes, whereas JSON.parse + JSON.stringify takes 5 seconds.
+It's mostly working. To build up the objects and arrays, I was originally using `concat`, but it was terribly slow. On my 181 MB test file, it took over 7 minutes, whereas JSON.parse + JSON.stringify took 5 seconds.
 
-My untested hypothesis is that it's the `concat` in the parser. For objects and arrays I'm creating copies but not using the previous version, so that can be done mutably and probably bring the time down.
+Since I didn't need the immutability there — the previous versions of those states weren't used — I changed it to use `push`. Counter-intuitively, this caused memory leaks and it would fall over with a `Javascript heap out of memory`. If anything I would have expected the concat version to run out of memory, not the one that mutates in place.
 
-It won't get as fast as JSON.parse, but I think it should get within an order of magnitude at least.
+But it works if you run it with `node --max-old-space-size=4096 out/index.js`, and the performance is closer to what I'd hope for. That version ran in around 15-19 seconds.

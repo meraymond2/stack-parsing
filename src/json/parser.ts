@@ -58,8 +58,9 @@ export const parseTokens = (ts: TokenIter): JsonVal => {
       }
 
       case "ParseObjVal": {
-        const val = output.pop() as JsonVal
-        stack.push(ParsingObj(state.attributes.concat([[state.key, val]])))
+        const { attributes, key } = state
+        attributes.push([key, output.pop() as JsonVal])
+        stack.push(ParsingObj(attributes))
         if (ts.peek()?._tag !== "RBrace") ts.match("Comma")
         break
       }
@@ -76,8 +77,9 @@ export const parseTokens = (ts: TokenIter): JsonVal => {
       }
 
       case "ParseArrVal": {
-        const val = output.pop() as JsonVal
-        stack.push(ParsingArr(state.items.concat(val)))
+        const { items } = state
+        items.push(output.pop() as JsonVal)
+        stack.push(ParsingArr(items))
         if (ts.peek()?._tag !== "RSquare") ts.match("Comma")
         break
       }
