@@ -1,8 +1,6 @@
-import { readFileSync } from "fs"
-import { parse, stringify } from "./json"
+import { parse } from "./regex"
 
-const filePath = "package.json"
-const jsStr = readFileSync(filePath).toString()
+const regexSrc = "foo|bar+?"
 
-const ast = parse(jsStr)
-console.log(stringify(ast))
+const ts = parse(regexSrc)
+console.log(ts)
