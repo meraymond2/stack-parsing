@@ -1,6 +1,6 @@
 import { parse } from "./regex"
 
-const regexSrc = "foo|bar+?"
+const regexSrc = "ca+?s|t"
 
-const ts = parse(regexSrc)
-console.log(ts)
+const ast = parse(regexSrc)
+console.log(ast)

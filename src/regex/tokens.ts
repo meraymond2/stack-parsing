@@ -73,4 +73,5 @@ type PlusQuestion = { _tag: "+?" }
 type Star = { _tag: "*" }
 type StarQuestion = { _tag: "*?" }
 
+export type OpToken = Question | Plus | PlusQuestion | Star | StarQuestion
 export type Token = Char | LBracket | RBracket | Pipe | Question | Plus | PlusQuestion | Star | StarQuestion
