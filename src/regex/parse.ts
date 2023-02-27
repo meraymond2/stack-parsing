@@ -10,11 +10,11 @@ export const parse = (src: string): Node => {
     const state = stack.pop() as State
     switch (state._tag) {
       case "AlterationStart":
-        stack.push(AlterationPipe)
+        stack.push(AlterationCont)
         stack.push(ConcatenationStart)
         break
-      case "AlterationPipe":
-        if (ts.peek()?._tag === "|") {
+      case "AlterationCont":
+        if (ts.hasNext() && ts.peek()?._tag === "|") {
           ts.next()
           stack.push(AlterationEnd)
           stack.push(ConcatenationStart)
@@ -24,15 +24,16 @@ export const parse = (src: string): Node => {
         const right = output.pop() as Node
         const left = output.pop() as Node
         output.push(Alternation(left, right))
+        stack.push(AlterationCont)
         break
       }
       case "ConcatenationStart":
-        stack.push(ConcatenationRightCheck)
+        stack.push(ConcatenationCont)
         stack.push(RepetitionStart)
         break
-      case "ConcatenationRightCheck":
-        // while (src.hasNext() && src.peek() !== ")" && src.peek() !== "|") {
-        if (ts.peek()?._tag !== ")" && ts.peek()?._tag !== "|") {
+      // TODO: This could be an array rather than nested trees
+      case "ConcatenationCont":
+        if (ts.hasNext() && ts.peek()?._tag !== ")" && ts.peek()?._tag !== "|") {
           stack.push(ConcatenationEnd)
           stack.push(RepetitionStart)
         }
@@ -41,79 +42,60 @@ export const parse = (src: string): Node => {
         const right = output.pop() as Node
         const left = output.pop() as Node
         output.push(Concatenation(left, right))
+        stack.push(ConcatenationCont)
         break
       }
-      case "RepetitionStart": {
-        const t = ts.next()
-        if (t === null) throw Error("Unexpected end of input.") // todo: fix, is wrong
-        if (t._tag !== "Char") throw Error("Expected character")
-        const char = Char(t.literal)
-        // this will change when I have more than one primary, but for now do it here
+      case "RepetitionStart":
+        stack.push(RepetitionOp)
+        stack.push(PrimaryStart)
+        break
+      case "RepetitionOp": {
         const next = ts.peek()
         if (next && ["?", "+", "*", "+?", "*?"].includes(next._tag)) {
           const op = ts.next() as OpToken
-          output.push(Repetition(char, op._tag))
-        } else {
-          output.push(char)
+          const primary = output.pop() as Node
+          output.push(Repetition(primary, op._tag))
         }
         break
       }
-      case "RepetitionOp":
-        break
+      case "PrimaryStart": {
+        // TODO: check for other primary tokens, like ( and [
+        const t = ts.next()
+        if (!t || t._tag !== "Char") throw Error("Expected character")
+        output.push(Char(t.literal))
+      }
     }
   }
-
+  if (output.length > 1) throw Error("Unreachable")
   return output[0]
 }
 
-/*
-What does this function do? It parses a sub-node, and then checks for a pipe.
-Then if there's a pipe, it parses another subnode, and returns the whole thing,
-otherwise it returns the subnode.
-
-What we need to adapt to the stack is the temporary state. It needs to:
-- parse a Concatenation and put it on the output stack
-- check for a pipe
-- if there's a pipe, parse another Concatenation and put _that_ on the output stack
-  - then pop them both off and put an Alternation on the output stack
-- else, pop off the concat and put it on the output stack
-
-We need states or instructions for what to do next, and what to do after that,
-not in that order.
-
-It'll be something
-like:
-- ParseAlternation
-  - which just does [CheckPipe, ParseConcatenation]
--
-- put CheckForRightHandSide on the stack
-- put StartParsingConcatenation on the stack
-*/
-// I think I could probably make AlterationStart just [ AlterationPipe, ConcatenationStart ] instead
-// but I'd get into things around nested arrays
 type AlterationStart = { _tag: "AlterationStart" }
 const AlterationStart: AlterationStart = { _tag: "AlterationStart" }
-type AlterationPipe = { _tag: "AlterationPipe" }
-const AlterationPipe: AlterationPipe = { _tag: "AlterationPipe" }
+type AlterationCont = { _tag: "AlterationCont" }
+const AlterationCont: AlterationCont = { _tag: "AlterationCont" }
 type AlterationEnd = { _tag: "AlterationEnd" }
 const AlterationEnd: AlterationEnd = { _tag: "AlterationEnd" }
 type ConcatenationStart = { _tag: "ConcatenationStart" }
 const ConcatenationStart: ConcatenationStart = { _tag: "ConcatenationStart" }
-type ConcatenationRightCheck = { _tag: "ConcatenationRightCheck" }
-const ConcatenationRightCheck: ConcatenationRightCheck = { _tag: "ConcatenationRightCheck" }
+type ConcatenationCont = { _tag: "ConcatenationCont" }
+const ConcatenationCont: ConcatenationCont = { _tag: "ConcatenationCont" }
 type ConcatenationEnd = { _tag: "ConcatenationEnd" }
 const ConcatenationEnd: ConcatenationEnd = { _tag: "ConcatenationEnd" }
 type RepetitionStart = { _tag: "RepetitionStart" }
 const RepetitionStart: RepetitionStart = { _tag: "RepetitionStart" }
 type RepetitionOp = { _tag: "RepetitionOp" }
 const RepetitionOp: RepetitionOp = { _tag: "RepetitionOp" }
+type PrimaryStart = { _tag: "PrimaryStart" }
+const PrimaryStart: PrimaryStart = { _tag: "PrimaryStart" }
 
 type State =
   | AlterationStart
-  | AlterationPipe
+  | AlterationCont
   | AlterationEnd
   | ConcatenationStart
-  | ConcatenationRightCheck
+  | ConcatenationCont
   | ConcatenationEnd
   | RepetitionStart
   | RepetitionOp
+  | PrimaryStart
