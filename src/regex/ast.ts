@@ -3,13 +3,15 @@ expr          -> alternation
 alternation   -> concat ("|" concat)*
 concatenation -> repetition repetition*
 repetition    -> primary ("?" | "+" | "*")?
-primary       -> block | char
+primary       -> block | char | charset
 block         -> "(" expr ")"
 char          -> [a-z]
+charset       -> "{" char* "}"
 */
 
-// TODO: do primaries, including blocks and char sets later.
-export type Node = Alternation | Concatenation | Repetition | Char
+export type Node = Alternation | Concatenation | Repetition | Primary
+
+export type Primary = Char | CharSet
 
 export type Alternation = {
   _tag: "Alternation"
@@ -48,3 +50,10 @@ export type Char = {
 }
 
 export const Char = (char: string): Char => ({ _tag: "Char", char })
+
+// For now, for simplicity, skipping ranges
+export type CharSet = {
+  _tag: "CharSet"
+  chars: string[]
+}
+export const CharSet = (chars: string[]): CharSet => ({ _tag: "CharSet", chars })

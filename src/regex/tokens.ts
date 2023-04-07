@@ -16,6 +16,10 @@ export class TokenIter {
         return { _tag: "(" }
       case ")":
         return { _tag: ")" }
+      case "{":
+        return { _tag: "{" }
+      case "}":
+        return { _tag: "}" }
       case "|":
         return { _tag: "|" }
       case "?":
@@ -41,6 +45,8 @@ export class TokenIter {
     switch (t._tag) {
       case "(":
       case ")":
+      case "{":
+      case "}":
       case "|":
       case "?":
       case "+":
@@ -57,15 +63,17 @@ export class TokenIter {
   }
 }
 
-type TokenTag = "Char" | "(" | ")" | "|" | "?" | "+" | "+?" | "*" | "*?"
+type TokenTag = "Char" | "(" | ")" | "{" | "}" | "|" | "?" | "+" | "+?" | "*" | "*?"
 
-type Char = {
+export type Char = {
   _tag: "Char"
   literal: string
 }
 
 type LBracket = { _tag: "(" }
 type RBracket = { _tag: ")" }
+type LBrace = { _tag: "{" }
+type RBrace = { _tag: "}" }
 type Pipe = { _tag: "|" }
 type Question = { _tag: "?" }
 type Plus = { _tag: "+" }
@@ -74,4 +82,15 @@ type Star = { _tag: "*" }
 type StarQuestion = { _tag: "*?" }
 
 export type OpToken = Question | Plus | PlusQuestion | Star | StarQuestion
-export type Token = Char | LBracket | RBracket | Pipe | Question | Plus | PlusQuestion | Star | StarQuestion
+export type Token =
+  | Char
+  | LBracket
+  | RBracket
+  | LBrace
+  | RBrace
+  | Pipe
+  | Question
+  | Plus
+  | PlusQuestion
+  | Star
+  | StarQuestion

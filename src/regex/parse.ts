@@ -1,5 +1,5 @@
-import { Alternation, Char, Concatenation, Node, Repetition } from "./ast"
-import { OpToken, TokenIter } from "./tokens"
+import { Alternation, Char, CharSet, Concatenation, Node, Repetition } from "./ast"
+import { OpToken, Char as CharToken, Token, TokenIter } from "./tokens"
 
 export const parse = (src: string): Node => {
   let ts = new TokenIter(src)
@@ -60,10 +60,31 @@ export const parse = (src: string): Node => {
         break
       }
       case "PrimaryStart": {
-        // TODO: check for other primary tokens, like ( and [
-        const t = ts.next()
-        if (!t || t._tag !== "Char") throw Error("Expected character")
-        out.push(Char(t.literal))
+        const next = ts.next()
+        if (!next) throw Error("Expected character")
+        if (next._tag === "(") {
+          stack.push(BlockAssemble)
+          stack.push(AlterationStart)
+          break
+        } else if (next._tag === "{") {
+          let chars: string[] = []
+          while (ts.peek()?._tag === "Char") {
+            const char = ts.next() as CharToken
+            chars.push(char.literal)
+          }
+          const closing = ts.next()
+          if (closing?._tag !== "}") throw Error("Expected }")
+          out.push(CharSet(chars))
+          break
+        }
+        if (next._tag !== "Char") throw Error("Expected character")
+        out.push(Char(next.literal))
+        break
+      }
+      case "BlockAssemble": {
+        const next = ts.next()
+        if (!next || next._tag !== ")") throw Error("Expected )")
+        break
       }
     }
   }
@@ -89,6 +110,8 @@ type RepetitionOp = { _tag: "RepetitionOp" }
 const RepetitionOp: RepetitionOp = { _tag: "RepetitionOp" }
 type PrimaryStart = { _tag: "PrimaryStart" }
 const PrimaryStart: PrimaryStart = { _tag: "PrimaryStart" }
+type BlockAssemble = { _tag: "BlockAssemble" }
+const BlockAssemble: BlockAssemble = { _tag: "BlockAssemble" }
 
 type State =
   | AlterationStart
@@ -100,3 +123,4 @@ type State =
   | RepetitionStart
   | RepetitionOp
   | PrimaryStart
+  | BlockAssemble
